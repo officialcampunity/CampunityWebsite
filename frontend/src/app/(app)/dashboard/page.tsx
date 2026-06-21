@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Feed from "@/components/Feed";
-import StoriesBar from "@/components/StoriesBar";
 import PostCreateModal from "@/components/PostCreateModal";
 import PostCard from "@/components/PostCard";
 import RightSidebar from "@/components/RightSidebar";
@@ -114,8 +113,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-
-        <StoriesBar />
 
         <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide space-y-5">
           {canShowPosts && (
