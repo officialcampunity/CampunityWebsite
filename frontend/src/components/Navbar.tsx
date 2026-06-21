@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useAuthModal } from "@/lib/auth-modal-context";
+import { useTheme, type ThemeMode } from "@/lib/theme-context";
+import { LuSun, LuMoon, LuMonitor } from "react-icons/lu";
 
 interface User {
   id: string;
@@ -18,18 +20,33 @@ interface NavbarProps {
 
 export default function Navbar({ user, onLogout }: NavbarProps) {
   const { open } = useAuthModal();
+  const { mode, resolved, setMode } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const themeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
+      if (themeRef.current && !themeRef.current.contains(e.target as Node)) {
+        setThemeOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const themeIcon = mode === "system" ? LuMonitor : mode === "dark" ? LuMoon : LuSun;
+  const ThemeIcon = themeIcon;
+
+  const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof LuSun }[] = [
+    { value: "system", label: "System", icon: LuMonitor },
+    { value: "light", label: "Light", icon: LuSun },
+    { value: "dark", label: "Dark", icon: LuMoon },
+  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-dark-bg/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10">
@@ -48,7 +65,40 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <div className="relative" ref={themeRef}>
+            <button
+              onClick={() => setThemeOpen(!themeOpen)}
+              aria-label="Theme"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition"
+            >
+              <ThemeIcon size={18} />
+            </button>
+            {themeOpen && (
+              <div className="absolute right-0 top-12 w-36 bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-white/10 py-1.5 animate-in fade-in z-50">
+                {THEME_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const active = mode === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setMode(opt.value); setThemeOpen(false); }}
+                      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-sm transition ${
+                        active
+                          ? "text-primary font-semibold"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10"
+                      }`}
+                    >
+                      <Icon size={16} />
+                      {opt.label}
+                      {active && <span className="ml-auto text-primary">&#10003;</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {user ? (
             <div className="relative" ref={dropdownRef}>
               <button

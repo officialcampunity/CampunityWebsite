@@ -2,14 +2,22 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { LuX, LuChevronLeft, LuChevronRight, LuPlay } from "react-icons/lu";
+import { api } from "@/lib/api";
+import { LuX, LuChevronLeft, LuChevronRight, LuPlay, LuEye } from "react-icons/lu";
 
 export interface StoryUser {
   id: string;
   displayName: string;
   username: string;
   avatarUrl: string | null;
-  stories: { id: string; url: string; type: "image" | "video" }[];
+  stories: {
+    id: string;
+    url: string;
+    type: "image" | "video";
+    caption: string | null;
+    views: number;
+    viewed: boolean;
+  }[];
 }
 
 const STORY_DURATION = 4000;
@@ -39,9 +47,18 @@ export default function StoryViewer({
   const [storyIndex, setStoryIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const viewedRef = useRef<Set<string>>(new Set());
 
   const currentUser = users[userIndex];
   const stories = currentUser?.stories || [];
+  const content = stories[storyIndex];
+
+  useEffect(() => {
+    if (content && !content.viewed && !viewedRef.current.has(content.id)) {
+      viewedRef.current.add(content.id);
+      api.viewStory(content.id).catch(() => {});
+    }
+  }, [content]);
 
   const startProgress = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -106,13 +123,11 @@ export default function StoryViewer({
     "from-violet-400 via-purple-500 to-pink-500",
   ];
   const gradient = gradientColors[userIndex % gradientColors.length];
-  const content = stories[storyIndex];
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      autoFocus
     >
       <div
         className="relative w-[90vw] sm:w-[380px] aspect-[9/16] max-h-[75vh] rounded-2xl overflow-hidden cursor-pointer select-none shadow-2xl"
@@ -121,13 +136,28 @@ export default function StoryViewer({
         <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
 
         {content?.url ? (
-          <div className="absolute inset-0 flex items-center justify-center p-6 relative">
-            <Image
-              src={content.url}
-              alt=""
-              fill
-              className="object-cover rounded-xl shadow-lg"
-            />
+          <div className="absolute inset-0 flex items-center justify-center p-0 relative">
+            {content.type === "image" ? (
+              <Image
+                src={content.url}
+                alt=""
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <video
+                src={content.url}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                playsInline
+              />
+            )}
+            {content.caption && (
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-10">
+                <p className="text-white text-sm font-medium">{content.caption}</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -146,12 +176,8 @@ export default function StoryViewer({
                 </span>
               )}
             </div>
-            <p className="text-white text-lg font-bold">
-              {currentUser?.displayName}
-            </p>
-            <p className="text-white/60 text-sm mt-0.5">
-              @{currentUser?.username}
-            </p>
+            <p className="text-white text-lg font-bold">{currentUser?.displayName}</p>
+            <p className="text-white/60 text-sm mt-0.5">@{currentUser?.username}</p>
           </div>
         )}
 
@@ -169,10 +195,10 @@ export default function StoryViewer({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full overflow-hidden ring-2 ring-white/50 flex-shrink-0">
-              {currentUser?.avatarUrl ? (
+                {currentUser?.avatarUrl ? (
                   <Image
                     src={currentUser.avatarUrl}
-                    alt={currentUser?.displayName || "Your avatar"}
+                    alt={currentUser?.displayName || ""}
                     width={28}
                     height={28}
                     className="w-full h-full object-cover"
@@ -183,22 +209,18 @@ export default function StoryViewer({
                   </div>
                 )}
               </div>
-              <div>
-                <p className="text-white text-sm font-bold leading-tight">
-                  {currentUser?.displayName}
-                </p>
-                <p className="text-white/60 text-[10px] leading-tight">
-                  Just now
-                </p>
-              </div>
+              <p className="text-white text-sm font-bold leading-tight">{currentUser?.displayName}</p>
             </div>
             <div className="flex items-center gap-2">
+              {content && (
+                <div className="flex items-center gap-1 text-white/60 text-xs">
+                  <LuEye size={12} />
+                  {content.views}
+                </div>
+              )}
               {paused && <LuPlay size={14} className="text-white/70" />}
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
+                onClick={(e) => { e.stopPropagation(); onClose(); }}
                 className="w-7 h-7 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition"
               >
                 <LuX size={14} className="text-white" />
@@ -207,14 +229,10 @@ export default function StoryViewer({
           </div>
         </div>
 
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white/25 text-[10px] flex items-center gap-2">
-          <span className="flex items-center gap-0.5">
-            <LuChevronLeft size={10} /> prev
-          </span>
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white/25 text-[10px] flex items-center gap-2 pointer-events-none">
+          <span className="flex items-center gap-0.5"><LuChevronLeft size={10} /> prev</span>
           <span>tap to pause</span>
-          <span className="flex items-center gap-0.5">
-            next <LuChevronRight size={10} />
-          </span>
+          <span className="flex items-center gap-0.5">next <LuChevronRight size={10} /></span>
         </div>
       </div>
 

@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { useAuthModal } from "@/lib/auth-modal-context";
-import { useTheme } from "@/lib/theme-context";
+import { useTheme, type ThemeMode } from "@/lib/theme-context";
+import { api } from "@/lib/api";
 import {
   LuUser,
   LuPalette,
   LuBell,
   LuShieldAlert,
+  LuMonitor,
   LuMoon,
   LuSun,
   LuCamera,
@@ -20,12 +22,16 @@ import {
   LuMessageCircle,
   LuUserPlus,
   LuSave,
+  LuArchive,
+  LuClock,
+  LuPlay,
 } from "react-icons/lu";
 
 const TABS = [
   { key: "profile", label: "Profile", icon: LuUser, desc: "Manage your personal information" },
   { key: "appearance", label: "Appearance", icon: LuPalette, desc: "Customize the look and feel" },
   { key: "notifications", label: "Notifications", icon: LuBell, desc: "Configure your notification preferences" },
+  { key: "archived", label: "Archived Stories", icon: LuArchive, desc: "View your expired stories" },
   { key: "danger", label: "Danger Zone", icon: LuShieldAlert, desc: "Irreversible account actions" },
 ] as const;
 
@@ -77,7 +83,7 @@ function Input({
 export default function SettingsPage() {
   const { user, loading, updateUser } = useAuth();
   const { open } = useAuthModal();
-  const { dark, toggle } = useTheme();
+  const { mode, resolved, setMode } = useTheme();
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -87,6 +93,8 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [archivedStories, setArchivedStories] = useState<import("@/lib/types").ArchivedStory[]>([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -95,6 +103,16 @@ export default function SettingsPage() {
       setAvatarUrl(user.avatarUrl || "");
     }
   }, [user]);
+
+  useEffect(() => {
+    if (activeTab === "archived" && user) {
+      setArchivedLoading(true);
+      api.getArchivedStories()
+        .then(setArchivedStories)
+        .catch(() => {})
+        .finally(() => setArchivedLoading(false));
+    }
+  }, [activeTab, user]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -353,23 +371,28 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-400 mb-6">
               Customize how Campunity looks for you
             </p>
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/[0.04] border border-gray-100 dark:border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/10 flex items-center justify-center shadow-sm">
-                  {dark ? (
-                    <LuMoon size={16} className="text-primary" />
-                  ) : (
-                    <LuSun size={16} className="text-amber-500" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-bold dark:text-white">Dark Mode</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Toggle between light and dark themes
-                  </p>
-                </div>
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-white/[0.04] border border-gray-100 dark:border-white/10">
+              <p className="text-sm font-bold dark:text-white mb-3">Theme</p>
+              <div className="flex gap-2">
+                {([["system", "System", LuMonitor], ["light", "Light", LuSun], ["dark", "Dark", LuMoon]] as [ThemeMode, string, typeof LuMonitor][])
+                  .map(([val, label, Icon]) => {
+                    const active = mode === val;
+                    return (
+                      <button
+                        key={val}
+                        onClick={() => setMode(val)}
+                        className={`flex-1 flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl text-xs font-semibold transition border ${
+                          active
+                            ? "bg-white dark:bg-dark-card border-primary text-primary shadow-sm"
+                            : "bg-white dark:bg-dark-card border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-white/30"
+                        }`}
+                      >
+                        <Icon size={18} />
+                        {label}
+                      </button>
+                    );
+                  })}
               </div>
-              <Toggle checked={dark} onChange={toggle} />
             </div>
           </div>
         )}
@@ -437,6 +460,74 @@ export default function SettingsPage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {activeTab === "archived" && (
+          <div>
+            <h2 className="text-lg font-bold dark:text-white mb-1">
+              Archived Stories
+            </h2>
+            <p className="text-sm text-gray-400 mb-6">
+              Stories that expired in the last 7 days
+            </p>
+            {archivedLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : archivedStories.length === 0 ? (
+              <div className="p-8 text-center bg-gray-50 dark:bg-white/[0.04] rounded-2xl border border-gray-100 dark:border-white/10">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gray-100 dark:bg-white/10 flex items-center justify-center">
+                  <LuArchive size={20} className="text-gray-400" />
+                </div>
+                <p className="text-sm font-medium dark:text-white mb-1">No archived stories</p>
+                <p className="text-xs text-gray-400">Expired stories will appear here for 7 days</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {archivedStories.map((s) => (
+                  <div
+                    key={s.id}
+                    className="relative aspect-[9/16] rounded-2xl overflow-hidden bg-gray-100 dark:bg-white/10 group cursor-pointer"
+                  >
+                    {s.mediaType === "image" ? (
+                      <img
+                        src={s.mediaUrl}
+                        alt={s.caption || "Archived story"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <video
+                        src={s.mediaUrl}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                      <button
+                        onClick={() => window.open(s.mediaUrl, "_blank")}
+                        className="flex items-center gap-1 text-xs text-white font-semibold bg-black/40 rounded-full px-2.5 py-1 backdrop-blur-sm"
+                      >
+                        <LuPlay size={12} />
+                        View
+                      </button>
+                    </div>
+                    {s.caption && (
+                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 via-transparent to-transparent">
+                        <p className="text-[11px] text-white font-medium truncate">
+                          {s.caption}
+                        </p>
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1">
+                      <LuClock size={10} className="text-white/80" />
+                      <span className="text-[10px] text-white/80 font-medium">
+                        {new Date(s.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

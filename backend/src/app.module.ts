@@ -17,6 +17,7 @@ import { CommonModule } from './common/common.module';
 import { HealthModule } from './health/health.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { EmailModule } from './email/email.module';
+import { PostsModule } from './posts/posts.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -46,7 +47,7 @@ import { RolesGuard } from './common/guards/roles.guard';
       type: 'postgres',
       url: process.env.DATABASE_URL || 'postgresql://localhost/campunity',
       autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV === 'development',
+      synchronize: process.env.NODE_ENV === 'development' || process.env.DB_SYNC === 'true',
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
@@ -65,6 +66,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     HealthModule,
     GatewaysModule,
     EmailModule,
+    PostsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

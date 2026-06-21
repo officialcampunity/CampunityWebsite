@@ -1,113 +1,72 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Feed from "@/components/Feed";
 import StoriesBar from "@/components/StoriesBar";
+import PostCreateModal from "@/components/PostCreateModal";
 import RightSidebar from "@/components/RightSidebar";
 import { useAuth } from "@/lib/auth-context";
-import {
-  LuPaperclip,
-  LuX,
-} from "react-icons/lu";
-
-type FileInfo = {
-  file: File;
-  type: string;
-  previewUrl: string | null;
-};
+import { LuFileText, LuImage, LuVideo, LuCamera } from "react-icons/lu";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [text, setText] = useState("");
-  const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const [feedKey, setFeedKey] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const previewUrl = f.type.startsWith("image/") || f.type.startsWith("video/")
-      ? URL.createObjectURL(f)
-      : null;
-    setFileInfo({ file: f, type: f.type, previewUrl });
-  }
-
-  function removeFile() {
-    if (fileInfo?.previewUrl) URL.revokeObjectURL(fileInfo.previewUrl);
-    setFileInfo(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  function handlePost() {
-    if (!text.trim() && !fileInfo) return;
-    const params = new URLSearchParams();
-    if (text.trim()) params.set("text", text.trim());
-    router.push(`/notes/new?${params.toString()}`);
-  }
-
-  const canPost = text.trim() || fileInfo;
 
   return (
     <div className="flex h-full gap-6">
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex-shrink-0">
           <div className="mb-6">
-            <div className="bg-white dark:bg-dark-card rounded-[32px] p-3 border border-gray-100 dark:border-white/10 transition-all duration-300">
-              <div className="flex items-center gap-3 bg-[#f8f9fa] dark:bg-white/10 rounded-full px-4 py-3 mb-3 transition-colors duration-300">
+            <div className="bg-white dark:bg-dark-card rounded-[32px] p-3 border border-gray-100 dark:border-white/10">
+              {/* What's on your mind bar */}
+              <button
+                onClick={() => setShowModal(true)}
+                className="w-full flex items-center gap-3 bg-[#f8f9fa] dark:bg-white/10 rounded-full px-4 py-3 transition-colors duration-300 hover:bg-gray-200 dark:hover:bg-white/20"
+              >
                 {user?.avatarUrl ? (
-                  <Image src={user.avatarUrl} width={32} height={32} className="w-8 h-8 rounded-full object-cover" alt={user.displayName || "User avatar"} />
+                  <Image
+                    src={user.avatarUrl}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full object-cover"
+                    alt={user.displayName || "User avatar"}
+                  />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/40 to-primary flex items-center justify-center text-white text-xs font-bold">
                     {user?.displayName?.charAt(0) || "?"}
                   </div>
                 )}
-                <input
-                  type="text"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="Share your study notes..."
-                  className="bg-transparent flex-1 outline-none text-[15px] font-medium text-gray-800 dark:text-white placeholder-gray-400 transition-colors duration-300"
-                />
-              </div>
+                <span className="text-[15px] text-gray-400 font-medium">
+                  What&apos;s on your mind?
+                </span>
+              </button>
 
-              {fileInfo && (
-                <div className="flex items-center justify-between px-4 pb-3">
-                  <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{fileInfo.file.name}</span>
-                  <button
-                    onClick={removeFile}
-                    className="w-7 h-7 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition"
-                  >
-                    <LuX size={14} />
-                  </button>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between px-4 pb-1">
-                <div className="flex items-center gap-6 text-[15px] font-bold text-gray-800 dark:text-white/80">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 hover:text-black dark:hover:text-white transition-all duration-300 ease-out active:scale-95"
-                  >
-                    <LuPaperclip size={18} />
-                    {fileInfo ? fileInfo.file.name : "Attach"}
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    onChange={handleFilePick}
-                  />
-                </div>
-
+              {/* Create options */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-white/10 px-2">
                 <button
-                  onClick={handlePost}
-                  disabled={!canPost}
-                  className="bg-primary text-white px-8 py-2.5 rounded-full hover:bg-primary/90 disabled:opacity-40 transition-all duration-300 ease-out active:scale-[0.97]"
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
                 >
-                  Post
+                  <LuImage size={18} className="text-green-500" />
+                  <span className="hidden sm:inline">Text &amp; Image</span>
+                </button>
+                <button
+                  onClick={() => router.push("/upload")}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+                >
+                  <LuFileText size={18} className="text-blue-500" />
+                  <span className="hidden sm:inline">Note</span>
+                </button>
+                <button
+                  onClick={() => router.push("/stories/new")}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+                >
+                  <LuVideo size={18} className="text-purple-500" />
+                  <span className="hidden sm:inline">Story</span>
                 </button>
               </div>
             </div>
@@ -127,6 +86,12 @@ export default function DashboardPage() {
         <RightSidebar />
       </aside>
 
+      {showModal && (
+        <PostCreateModal
+          onClose={() => setShowModal(false)}
+          onSuccess={() => setFeedKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }

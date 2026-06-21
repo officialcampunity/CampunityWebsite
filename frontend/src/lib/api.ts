@@ -199,13 +199,43 @@ export const api = {
     request<import("./types").Course[]>(`/courses/search?q=${encodeURIComponent(q)}`),
 
   getStories: () =>
-    request<{ user: { id: string; displayName: string; username: string; avatarUrl: string | null }; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string }[] }[]>("/stories/following"),
+    request<{ user: { id: string; displayName: string; username: string; avatarUrl: string | null }; stories: { id: string; mediaUrl: string; mediaType: string; caption: string | null; createdAt: string; expiresAt: string; views: number; viewed: boolean }[] }[]>("/stories/following"),
 
-  createStory: (mediaUrl: string, mediaType?: string) =>
-    request<{ id: string; mediaUrl: string; mediaType: string; createdAt: string }>("/stories", {
+  getDiscoverStories: () =>
+    request<{ id: string; mediaUrl: string; mediaType: string; caption: string | null; createdAt: string; expiresAt: string; views: number; viewed: boolean; author: { id: string; displayName: string; username: string; avatarUrl: string | null } }[]>("/stories/discover"),
+
+  getMyStories: () =>
+    request<{ id: string; mediaUrl: string; mediaType: string; caption: string | null; createdAt: string; expiresAt: string; scheduledAt: string | null; published: boolean; views: number; expired: boolean }[]>("/stories/mine"),
+
+  getArchivedStories: () =>
+    request<import("./types").ArchivedStory[]>("/stories/archived"),
+
+  createPost: (data: { content: string; imageUrl?: string }) =>
+    request<import("./types").Post>("/posts", {
       method: "POST",
-      body: JSON.stringify({ mediaUrl, mediaType }),
+      body: JSON.stringify(data),
     }),
+
+  getPosts: (page = 1, limit = 10) =>
+    request<import("./types").FeedResponsePost>(`/posts?page=${page}&limit=${limit}`),
+
+  getMyPosts: (page = 1, limit = 20) =>
+    request<import("./types").FeedResponsePost>(`/posts/mine?page=${page}&limit=${limit}`),
+
+  deletePost: (id: string) =>
+    request<void>(`/posts/${id}`, { method: "DELETE" }),
+
+  createStory: (data: { mediaUrl: string; mediaType?: string; caption?: string; scheduledAt?: string }) =>
+    request<{ id: string; mediaUrl: string; mediaType: string; caption: string | null; createdAt: string; expiresAt: string; scheduledAt: string | null }>("/stories", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  viewStory: (id: string) =>
+    request<void>(`/stories/${id}/view`, { method: "POST" }),
+
+  getStoryViews: (id: string) =>
+    request<{ count: number; viewers: { id: string; displayName: string; username: string; avatarUrl: string | null }[] }>(`/stories/${id}/views`),
 
   deleteStory: (id: string) =>
     request<void>(`/stories/${id}`, { method: "DELETE" }),

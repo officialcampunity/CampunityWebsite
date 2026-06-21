@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards, Req } from '@nestjs/common';
 import { StoriesService } from './stories.service';
+import { CreateStoryDto } from './dto/create-story.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('stories')
@@ -13,9 +14,40 @@ export class StoriesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('discover')
+  async getDiscover(@Req() req: any) {
+    return this.storiesService.findDiscover(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('mine')
+  async getMine(@Req() req: any) {
+    return this.storiesService.getMyStories(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Req() req: any, @Body() body: { mediaUrl: string; mediaType?: string }) {
-    return this.storiesService.create(body.mediaUrl, body.mediaType || 'image', req.user.id);
+  async create(@Req() req: any, @Body() dto: CreateStoryDto) {
+    return this.storiesService.create(dto, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/view')
+  async view(@Param('id') id: string, @Req() req: any) {
+    await this.storiesService.viewStory(id, req.user.id);
+    return { ok: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/views')
+  async getViews(@Param('id') id: string, @Req() req: any) {
+    return this.storiesService.getStoryViews(id, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('archived')
+  async getArchived(@Req() req: any) {
+    return this.storiesService.getArchived(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

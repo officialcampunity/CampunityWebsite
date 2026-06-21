@@ -90,6 +90,37 @@ export interface FeedResponse {
   limit: number;
 }
 
+export interface Post {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+  author: {
+    id: string;
+    displayName: string;
+    username: string;
+    avatarUrl: string | null;
+  };
+}
+
+export interface FeedResponsePost {
+  data: Post[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ArchivedStory {
+  id: string;
+  mediaUrl: string;
+  mediaType: string;
+  caption: string | null;
+  createdAt: string;
+  expiresAt: string;
+  archived: boolean;
+}
+
 export interface PaginatedResult<T> {
   data: T[];
   total: number;

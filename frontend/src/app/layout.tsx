@@ -43,7 +43,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icon-192.svg" />
         <Script id="theme-init" strategy="beforeInteractive">
-          {`(function(){try{document.documentElement.classList.toggle('dark',localStorage.getItem('theme')==='dark'||(!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme:dark)').matches))}catch(e){}})()`}
+          {`(function(){try{var m=localStorage.getItem('theme-mode')||localStorage.getItem('theme');document.documentElement.classList.toggle('dark',m==='dark'||(m!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches))}catch(e){}})()`}
         </Script>
       </head>
       <body className="bg-white dark:bg-dark-bg transition-colors duration-300">
