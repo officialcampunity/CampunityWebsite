@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { api, setAccessToken, getAccessToken } from "./api";
+import { api } from "./api";
 import type { User } from "./types";
 
 interface AuthContextType {
@@ -27,33 +27,40 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    let retries = 0;
+
+    async function attempt() {
+      try {
+        const u = await api.getMe();
+        if (!cancelled) setUser(u);
+        return true;
+      } catch {
+        return false;
+      }
+    }
 
     async function init() {
-      try {
-        const u = await api.getMe();
-        if (!cancelled) setUser(u);
-        return;
-      } catch {
-        // cookie may be stale — try refreshing the token
+      // First try: immediate
+      let ok = await attempt();
+      // Second try: wait 1.5s and retry (catches backend still starting up)
+      if (!ok) {
+        await delay(1500);
+        ok = await attempt();
       }
-
-      try {
-        const stored = getAccessToken();
-        if (!stored) return;
-
-        const { access_token } = await api.refreshToken();
-        setAccessToken(access_token);
-
-        const u = await api.getMe();
-        if (!cancelled) setUser(u);
-      } catch {
-        // both cookie and refresh failed — logged out
+      // Third try: wait 3s and retry
+      if (!ok) {
+        await delay(3000);
+        await attempt();
       }
     }
 
@@ -65,8 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { user, access_token } = await api.login(email, password);
-    setAccessToken(access_token);
+    const { user } = await api.login(email, password);
     setUser(user);
   }, []);
 
@@ -77,13 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: string,
       displayName: string
     ) => {
-      const { user, access_token } = await api.register(
+      const { user } = await api.register(
         email,
         password,
         username,
         displayName
       );
-      setAccessToken(access_token);
       setUser(user);
     },
     []
@@ -95,7 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore server errors — clear state anyway */
     } finally {
-      setAccessToken(null);
       setUser(null);
     }
   }, []);

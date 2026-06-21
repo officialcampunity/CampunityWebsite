@@ -6,9 +6,11 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { LuX, LuImage, LuSend } from "react-icons/lu";
 
+import type { Post } from "@/lib/types";
+
 interface Props {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (post: Post) => void;
 }
 
 export default function PostCreateModal({ onClose, onSuccess }: Props) {
@@ -49,8 +51,8 @@ export default function PostCreateModal({ onClose, onSuccess }: Props) {
         const data = await res.json();
         imageUrl = data.url;
       }
-      await api.createPost({ content: content.trim(), imageUrl });
-      onSuccess();
+      const post = await api.createPost({ content: content.trim(), imageUrl });
+      onSuccess(post);
       onClose();
     } catch {
       /* ignore */

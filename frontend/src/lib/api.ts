@@ -1,23 +1,5 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-let accessToken: string | null = null;
-
-export function setAccessToken(token: string | null) {
-  accessToken = token;
-  if (token) {
-    localStorage.setItem("access_token", token);
-  } else {
-    localStorage.removeItem("access_token");
-  }
-}
-
-export function getAccessToken(): string | null {
-  if (!accessToken) {
-    accessToken = localStorage.getItem("access_token");
-  }
-  return accessToken;
-}
-
 class ApiError extends Error {
   status: number;
   data: unknown;
@@ -40,11 +22,6 @@ async function request<T>(
 
   if (!isGet) {
     headers["Content-Type"] = "application/json";
-  }
-
-  const token = getAccessToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -74,7 +51,7 @@ async function request<T>(
 
 export const api = {
   login: (email: string, password: string) =>
-    request<{ user: import("./types").User; access_token: string }>("/auth/login", {
+    request<{ user: import("./types").User }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
@@ -85,15 +62,12 @@ export const api = {
     username: string,
     displayName: string
   ) =>
-    request<{ user: import("./types").User; access_token: string }>("/auth/register", {
+    request<{ user: import("./types").User }>("/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password, username, displayName }),
     }),
 
   logout: () => request<void>("/auth/logout", { method: "POST" }),
-
-  refreshToken: () =>
-    request<{ access_token: string }>("/auth/refresh", { method: "POST" }),
 
   getMe: () => request<import("./types").User>("/auth/me"),
 

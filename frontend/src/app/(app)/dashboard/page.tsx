@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Feed from "@/components/Feed";
 import StoriesBar from "@/components/StoriesBar";
 import PostCreateModal from "@/components/PostCreateModal";
+import PostCard from "@/components/PostCard";
 import RightSidebar from "@/components/RightSidebar";
 import { useAuth } from "@/lib/auth-context";
 import { useAuthModal } from "@/lib/auth-modal-context";
+import { api } from "@/lib/api";
+import type { Post } from "@/lib/types";
 import { LuFileText, LuImage, LuVideo } from "react-icons/lu";
 
 export default function DashboardPage() {
@@ -17,6 +20,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [feedKey, setFeedKey] = useState(0);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   function requireAuth(action: () => void) {
     if (!user) {
@@ -26,13 +31,41 @@ export default function DashboardPage() {
     }
   }
 
+  useEffect(() => {
+    if (!user) {
+      setPosts([]);
+      setPostsLoading(false);
+      return;
+    }
+    setPostsLoading(true);
+    api.getPosts(1, 20)
+      .then((res) => setPosts(res.data))
+      .catch(() => {})
+      .finally(() => setPostsLoading(false));
+  }, [user, feedKey]);
+
+  function handlePostSuccess(newPost: Post) {
+    setPosts((prev) => [newPost, ...prev]);
+    setFeedKey((k) => k + 1);
+  }
+
+  async function handleDeletePost(id: string) {
+    try {
+      await api.deletePost(id);
+      setPosts((prev) => prev.filter((p) => p.id !== id));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const canShowPosts = user && posts.length > 0;
+
   return (
     <div className="flex h-full gap-6">
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex-shrink-0">
           <div className="mb-6">
             <div className="bg-white dark:bg-dark-card rounded-[32px] p-3 border border-gray-100 dark:border-white/10">
-              {/* What's on your mind bar */}
               <button
                 onClick={() => requireAuth(() => setShowModal(true))}
                 className="w-full flex items-center gap-3 bg-[#f8f9fa] dark:bg-white/10 rounded-full px-4 py-3 transition-colors duration-300 hover:bg-gray-200 dark:hover:bg-white/20"
@@ -55,7 +88,6 @@ export default function DashboardPage() {
                 </span>
               </button>
 
-              {/* Create options */}
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-white/10 px-2">
                 <button
                   onClick={() => requireAuth(() => setShowModal(true))}
@@ -85,7 +117,19 @@ export default function DashboardPage() {
 
         <StoriesBar />
 
-        <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide space-y-5">
+          {canShowPosts && (
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onDelete={post.author.id === user?.id ? handleDeletePost : undefined}
+                />
+              ))}
+            </div>
+          )}
+
           <Feed key={feedKey} refreshKey={feedKey} />
         </div>
       </div>
@@ -97,7 +141,7 @@ export default function DashboardPage() {
       {showModal && (
         <PostCreateModal
           onClose={() => setShowModal(false)}
-          onSuccess={() => setFeedKey((k) => k + 1)}
+          onSuccess={handlePostSuccess}
         />
       )}
     </div>

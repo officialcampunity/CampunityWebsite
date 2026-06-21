@@ -30,8 +30,8 @@ export class AuthController {
   private setCookie(res: Response, token: string) {
     res.cookie('token', token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
     });
@@ -42,7 +42,7 @@ export class AuthController {
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.register(dto);
     this.setCookie(res, result.access_token);
-    return { user: instanceToPlain(result.user), access_token: result.access_token };
+    return { user: instanceToPlain(result.user) };
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -51,34 +51,26 @@ export class AuthController {
   async login(@Req() req: any, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(req.user);
     this.setCookie(res, result.access_token);
-    return { user: instanceToPlain(result.user), access_token: result.access_token };
+    return { user: instanceToPlain(result.user) };
   }
 
   @Post('google')
   async googleLogin(@Body() dto: GoogleLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.googleLogin(dto);
     this.setCookie(res, result.access_token);
-    return { user: instanceToPlain(result.user), access_token: result.access_token };
+    return { user: instanceToPlain(result.user) };
   }
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
     res.cookie('token', '', {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      secure: true,
       maxAge: 0,
       path: '/',
     });
     return { message: 'Logged out' };
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('refresh')
-  async refresh(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.refresh(req.user.id);
-    this.setCookie(res, result.access_token);
-    return { access_token: result.access_token };
   }
 
   @UseInterceptors(ClassSerializerInterceptor)
