@@ -1,0 +1,18 @@
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Editor ──
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Secrets / credentials ──
+credentials.md
+
+# ── Agent / planning files (not for production) ──
+progress.md
+task_plan.md
+AGENTS.md
+CLAUDE.md

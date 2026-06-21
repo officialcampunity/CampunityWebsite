@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #5B8DEF;
+  --color-accent: #E07070;
+  --color-success: #4ADE80;
+  --color-bg: #F8FAFC;
+  --color-text: #0F172A;
+  --color-dark-bg: #14141a;
+  --color-dark-surface: #1e1e28;
+  --color-dark-card: #252533;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::selection {
+  background: rgba(0, 0, 0, 0.1);
+}
+.dark ::selection {
+  background: rgba(255, 255, 255, 0.15);
+}
