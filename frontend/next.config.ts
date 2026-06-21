@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
           { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-          { key: "Content-Security-Policy", value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' https://res.cloudinary.com data: blob:; font-src 'self' data:; connect-src 'self' ${API_URL} ${API_URL.replace(/^http/, "ws")} ${WS_URL} ${WS_URL.replace(/^http/, "ws")}; frame-src 'none' https://vercel.live; object-src 'none'; base-uri 'self'; form-action 'self'` },
+          { key: "Content-Security-Policy", value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live; style-src 'self' 'unsafe-inline'; img-src 'self' https://res.cloudinary.com data: blob:; font-src 'self' data:; connect-src 'self' ${API_URL} ${API_URL.replace(/^http/, "ws")} ${WS_URL} ${WS_URL.replace(/^http/, "ws")}; frame-src https://vercel.live; object-src 'none'; base-uri 'self'; form-action 'self'` },
         ],
       },
     ];
