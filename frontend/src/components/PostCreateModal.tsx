@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/lib/toast-context";
 import { LuX, LuImage, LuSend } from "react-icons/lu";
 
 import type { Post } from "@/lib/types";
@@ -15,6 +16,7 @@ interface Props {
 
 export default function PostCreateModal({ onClose, onSuccess }: Props) {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -52,6 +54,7 @@ export default function PostCreateModal({ onClose, onSuccess }: Props) {
         imageUrl = data.url;
       }
       const post = await api.createPost({ content: content.trim(), imageUrl });
+      addToast("Post created!", "success");
       onSuccess(post);
       onClose();
     } catch {

@@ -4,8 +4,11 @@ import { Repository, LessThan, MoreThan, LessThanOrEqual } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Story } from './story.entity';
 import { StoryView } from './story-view.entity';
+import { StoryComment } from './story-comment.entity';
 import { Follow } from '../entities/follow.entity';
+import { Message } from '../entities/message.entity';
 import { CreateStoryDto } from './dto/create-story.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class StoriesService {
@@ -14,8 +17,13 @@ export class StoriesService {
     private storiesRepository: Repository<Story>,
     @InjectRepository(StoryView)
     private storyViewsRepository: Repository<StoryView>,
+    @InjectRepository(StoryComment)
+    private storyCommentsRepository: Repository<StoryComment>,
     @InjectRepository(Follow)
     private followsRepository: Repository<Follow>,
+    @InjectRepository(Message)
+    private messagesRepository: Repository<Message>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(dto: CreateStoryDto, userId: string): Promise<Story> {
@@ -222,6 +230,76 @@ export class StoriesService {
       expiresAt: s.expiresAt,
       archived: true,
     }));
+  }
+
+  async addComment(storyId: string, userId: string, content: string) {
+    const story = await this.storiesRepository.findOne({
+      where: { id: storyId },
+      relations: { author: true },
+    });
+    if (!story) throw new NotFoundException('Story not found');
+    const comment = this.storyCommentsRepository.create({
+      content,
+      author: { id: userId } as any,
+      story: { id: storyId } as any,
+    });
+    const saved = await this.storyCommentsRepository.save(comment);
+    const full = await this.storyCommentsRepository.findOne({
+      where: { id: saved.id },
+      relations: { author: true },
+    });
+    if (!full) throw new Error('Comment not found after creation');
+    return {
+      id: full.id,
+      content: full.content,
+      createdAt: full.createdAt,
+      author: {
+        id: full.author.id,
+        displayName: full.author.displayName,
+        username: full.author.username,
+        avatarUrl: full.author.avatarUrl,
+      },
+    };
+  }
+
+  async getComments(storyId: string) {
+    const comments = await this.storyCommentsRepository.find({
+      where: { story: { id: storyId } },
+      relations: { author: true },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+    return comments.map(c => ({
+      id: c.id,
+      content: c.content,
+      createdAt: c.createdAt,
+      author: {
+        id: c.author.id,
+        displayName: c.author.displayName,
+        username: c.author.username,
+        avatarUrl: c.author.avatarUrl,
+      },
+    }));
+  }
+
+  async replyAsMessage(storyId: string, userId: string, content: string) {
+    const story = await this.storiesRepository.findOne({
+      where: { id: storyId },
+      relations: { author: true },
+    });
+    if (!story) throw new NotFoundException('Story not found');
+    const msg = this.messagesRepository.create({
+      content,
+      sender: { id: userId } as any,
+      receiver: { id: story.author.id } as any,
+    });
+    await this.messagesRepository.save(msg);
+    await this.notificationsService.create({
+      type: 'message',
+      actorId: userId,
+      recipientId: story.author.id,
+    }).catch(() => {});
+    return { message: 'Sent as message' };
   }
 
   @Cron(CronExpression.EVERY_30_MINUTES)

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Param, Body, UseGuards, Req } from '@nes
 import { StoriesService } from './stories.service';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 @Controller('stories')
 export class StoriesController {
@@ -26,6 +27,12 @@ export class StoriesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('archived')
+  async getArchived(@Req() req: any) {
+    return this.storiesService.getArchived(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Req() req: any, @Body() dto: CreateStoryDto) {
     return this.storiesService.create(dto, req.user.id);
@@ -44,10 +51,22 @@ export class StoriesController {
     return this.storiesService.getStoryViews(id, req.user.id);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/comments')
+  async getComments(@Param('id') id: string) {
+    return this.storiesService.getComments(id);
+  }
+
   @UseGuards(JwtAuthGuard)
-  @Get('archived')
-  async getArchived(@Req() req: any) {
-    return this.storiesService.getArchived(req.user.id);
+  @Post(':id/comments')
+  async addComment(@Req() req: any, @Param('id') id: string, @Body('content') content: string) {
+    return this.storiesService.addComment(id, req.user.id, content);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/reply')
+  async replyAsMessage(@Req() req: any, @Param('id') id: string, @Body('content') content: string) {
+    return this.storiesService.replyAsMessage(id, req.user.id, content);
   }
 
   @UseGuards(JwtAuthGuard)

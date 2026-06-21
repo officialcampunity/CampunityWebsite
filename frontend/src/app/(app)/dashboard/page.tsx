@@ -125,6 +125,7 @@ export default function DashboardPage() {
                   key={post.id}
                   post={post}
                   onDelete={post.author.id === user?.id ? handleDeletePost : undefined}
+                  onUpdate={(updated) => setPosts((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
                 />
               ))}
             </div>

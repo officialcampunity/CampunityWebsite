@@ -11,6 +11,7 @@ interface User {
   name: string;
   username: string;
   avatar: string;
+  role?: string;
 }
 
 interface NavbarProps {
@@ -133,6 +134,15 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   >
                     Messages
                   </Link>
+                  {(user?.role === 'admin' || user?.role === 'superadmin') && (
+                    <Link
+                      href="/admin"
+                      className="block px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-white/10 dark:text-white transition"
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      Admin
+                    </Link>
+                  )}
                   <div className="border-t border-gray-100 dark:border-white/10 mt-1 pt-1">
                     <button
                       onClick={() => {

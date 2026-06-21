@@ -15,7 +15,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen bg-white dark:bg-dark-bg flex p-6 gap-6 overflow-hidden transition-colors duration-300">
       <Sidebar
-        user={user ? { id: user.id, displayName: user.displayName, username: user.username, avatarUrl: user.avatarUrl } : null}
+        user={user ? { id: user.id, displayName: user.displayName, username: user.username, avatarUrl: user.avatarUrl, role: user.role } : null}
         onUploadClick={() => router.push('/upload')}
         onLogout={logout}
       />

@@ -6,6 +6,7 @@ export interface User {
   avatarUrl: string | null;
   bio: string | null;
   createdAt: string;
+  role?: 'user' | 'admin' | 'superadmin';
   isFollowing?: boolean;
   isBlocked?: boolean;
   _count?: { followers: number; following: number; resources: number };
@@ -103,6 +104,33 @@ export interface Post {
     username: string;
     avatarUrl: string | null;
   };
+  likesCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+}
+
+export interface PostComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: {
+    id: string;
+    displayName: string;
+    username: string;
+    avatarUrl: string | null;
+  };
+}
+
+export interface StoryComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: {
+    id: string;
+    displayName: string;
+    username: string;
+    avatarUrl: string | null;
+  };
 }
 
 export interface FeedResponsePost {
@@ -129,4 +157,22 @@ export interface PaginatedResult<T> {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+export interface Report {
+  id: string;
+  reason: string;
+  status: string;
+  reporter: { id: string; displayName: string; username: string; avatarUrl: string | null };
+  resource: { id: string; title: string } | null;
+  reportedUser: { id: string; displayName: string; username: string } | null;
+  createdAt: string;
+}
+
+export interface AdminStats {
+  users: number;
+  resources: number;
+  reports: number;
+  posts: number;
+  stories: number;
 }

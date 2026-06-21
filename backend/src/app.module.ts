@@ -18,6 +18,7 @@ import { HealthModule } from './health/health.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { EmailModule } from './email/email.module';
 import { PostsModule } from './posts/posts.module';
+import { AdminModule } from './admin/admin.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -67,6 +68,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     GatewaysModule,
     EmailModule,
     PostsModule,
+    AdminModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

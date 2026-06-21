@@ -9,14 +9,14 @@ import { useSocket } from "@/lib/socket-context";
 import { api } from "@/lib/api";
 import {
   LuGrid3X3, LuSearch, LuCompass, LuZap, LuFileText,
-  LuBookmark, LuMessageSquare, LuBell, LuSettings, LuLogOut,
+  LuBookmark, LuMessageSquare, LuBell, LuSettings, LuLogOut, LuShield,
 } from "react-icons/lu";
 
 
 import type { User } from "@/lib/types";
 
 interface SidebarProps {
-  user?: Pick<User, 'id' | 'displayName' | 'username' | 'avatarUrl'> | null;
+  user?: Pick<User, 'id' | 'displayName' | 'username' | 'avatarUrl'> & { role?: string } | null;
   onUploadClick?: () => void;
   onLogout?: () => void;
 }
@@ -66,6 +66,9 @@ export default function Sidebar({ user, onUploadClick, onLogout }: SidebarProps)
     { href: "/bookmarks", label: "Bookmarks", icon: BookmarkIcon, authRequired: true },
     { href: "/notifications", label: "Notifications", icon: BellIcon, authRequired: true, badge: unreadNotifCount },
     { href: "/settings", label: "Settings", icon: SettingsIcon, authRequired: false },
+    ...(user?.role === 'admin' || user?.role === 'superadmin'
+      ? [{ href: "/admin", label: "Admin", icon: ShieldIcon, authRequired: true } as const]
+      : []),
   ];
 
   const filteredLinks = mainLinks.filter((l) => !l.authRequired || user);
@@ -397,6 +400,10 @@ function BellIcon({ active }: { active?: boolean }) {
 
 function SettingsIcon({ active }: { active?: boolean }) {
   return <LuSettings size={20} className={active ? "text-white" : "text-gray-600 dark:text-gray-400"} />;
+}
+
+function ShieldIcon({ active }: { active?: boolean }) {
+  return <LuShield size={20} className={active ? "text-white" : "text-gray-600 dark:text-gray-400"} />;
 }
 
 function LogoutIcon() {

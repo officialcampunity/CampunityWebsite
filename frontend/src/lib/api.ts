@@ -214,6 +214,21 @@ export const api = {
   getArchivedStories: () =>
     request<import("./types").ArchivedStory[]>("/stories/archived"),
 
+  getStoryComments: (id: string) =>
+    request<import("./types").StoryComment[]>(`/stories/${id}/comments`),
+
+  addStoryComment: (id: string, content: string) =>
+    request<import("./types").StoryComment>(`/stories/${id}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }),
+
+  replyToStory: (id: string, content: string) =>
+    request<{ message: string }>(`/stories/${id}/reply`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }),
+
   createPost: (data: { content: string; imageUrl?: string }) =>
     request<import("./types").Post>("/posts", {
       method: "POST",
@@ -225,6 +240,27 @@ export const api = {
 
   getMyPosts: (page = 1, limit = 20) =>
     request<import("./types").FeedResponsePost>(`/posts/mine?page=${page}&limit=${limit}`),
+
+  updatePost: (id: string, data: { content?: string; imageUrl?: string }) =>
+    request<import("./types").Post>(`/posts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  likePost: (id: string) =>
+    request<void>(`/posts/${id}/like`, { method: "POST" }),
+
+  unlikePost: (id: string) =>
+    request<void>(`/posts/${id}/like`, { method: "DELETE" }),
+
+  getPostComments: (id: string, page = 1, limit = 20) =>
+    request<import("./types").PaginatedResult<import("./types").PostComment>>(`/posts/${id}/comments?page=${page}&limit=${limit}`),
+
+  addPostComment: (id: string, content: string) =>
+    request<import("./types").PostComment>(`/posts/${id}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }),
 
   deletePost: (id: string) =>
     request<void>(`/posts/${id}`, { method: "DELETE" }),
@@ -267,4 +303,33 @@ export const api = {
 
   getBlockedUsers: () =>
     request<import("./types").User[]>("/users/blocked"),
+
+  admin: {
+    getStats: () =>
+      request<import("./types").AdminStats>("/admin/stats"),
+
+    getUsers: (page = 1, limit = 20, search?: string) =>
+      request<import("./types").PaginatedResult<import("./types").User & { role: string }>>(`/admin/users?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`),
+
+    updateUserRole: (id: string, role: string) =>
+      request<import("./types").User>(`/admin/users/${id}/role`, {
+        method: "PATCH",
+        body: JSON.stringify({ role }),
+      }),
+
+    deleteUser: (id: string) =>
+      request<void>(`/admin/users/${id}`, { method: "DELETE" }),
+
+    getResources: (page = 1, limit = 20, search?: string) =>
+      request<import("./types").PaginatedResult<import("./types").Resource>>(`/admin/resources?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`),
+
+    deleteResource: (id: string) =>
+      request<void>(`/admin/resources/${id}`, { method: "DELETE" }),
+
+    getReports: (page = 1, limit = 20) =>
+      request<import("./types").PaginatedResult<import("./types").Report>>(`/admin/reports?page=${page}&limit=${limit}`),
+
+    resolveReport: (id: string) =>
+      request<void>(`/admin/reports/${id}/resolve`, { method: "PATCH" }),
+  },
 };
