@@ -362,7 +362,7 @@ describe('UsersService', () => {
       const follower = makeUser({ id: 'user-2' });
       mockFollowsRepository.findAndCount.mockResolvedValue([[{ follower }], 1]);
 
-      const result = await service.getFollowers('user-1', 1, 20);
+      const result = await service.getFollowers('user-1', undefined, 1, 20);
 
       expect(result.data).toEqual([follower]);
       expect(result.total).toBe(1);
@@ -374,7 +374,7 @@ describe('UsersService', () => {
       const following = makeUser({ id: 'user-2' });
       mockFollowsRepository.findAndCount.mockResolvedValue([[{ following }], 1]);
 
-      const result = await service.getFollowing('user-1', 1, 20);
+      const result = await service.getFollowing('user-1', undefined, 1, 20);
 
       expect(result.data).toEqual([following]);
       expect(result.total).toBe(1);

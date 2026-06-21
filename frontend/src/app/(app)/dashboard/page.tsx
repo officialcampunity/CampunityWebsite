@@ -8,13 +8,23 @@ import StoriesBar from "@/components/StoriesBar";
 import PostCreateModal from "@/components/PostCreateModal";
 import RightSidebar from "@/components/RightSidebar";
 import { useAuth } from "@/lib/auth-context";
-import { LuFileText, LuImage, LuVideo, LuCamera } from "react-icons/lu";
+import { useAuthModal } from "@/lib/auth-modal-context";
+import { LuFileText, LuImage, LuVideo } from "react-icons/lu";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { open: openAuth } = useAuthModal();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [feedKey, setFeedKey] = useState(0);
+
+  function requireAuth(action: () => void) {
+    if (!user) {
+      openAuth("login");
+    } else {
+      action();
+    }
+  }
 
   return (
     <div className="flex h-full gap-6">
@@ -24,7 +34,7 @@ export default function DashboardPage() {
             <div className="bg-white dark:bg-dark-card rounded-[32px] p-3 border border-gray-100 dark:border-white/10">
               {/* What's on your mind bar */}
               <button
-                onClick={() => setShowModal(true)}
+                onClick={() => requireAuth(() => setShowModal(true))}
                 className="w-full flex items-center gap-3 bg-[#f8f9fa] dark:bg-white/10 rounded-full px-4 py-3 transition-colors duration-300 hover:bg-gray-200 dark:hover:bg-white/20"
               >
                 {user?.avatarUrl ? (
@@ -48,21 +58,21 @@ export default function DashboardPage() {
               {/* Create options */}
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-white/10 px-2">
                 <button
-                  onClick={() => setShowModal(true)}
+                  onClick={() => requireAuth(() => setShowModal(true))}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
                 >
                   <LuImage size={18} className="text-green-500" />
                   <span className="hidden sm:inline">Text &amp; Image</span>
                 </button>
                 <button
-                  onClick={() => router.push("/upload")}
+                  onClick={() => requireAuth(() => router.push("/upload"))}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
                 >
                   <LuFileText size={18} className="text-blue-500" />
                   <span className="hidden sm:inline">Note</span>
                 </button>
                 <button
-                  onClick={() => router.push("/stories/new")}
+                  onClick={() => requireAuth(() => router.push("/stories/new"))}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
                 >
                   <LuVideo size={18} className="text-purple-500" />
@@ -73,9 +83,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="lg:hidden">
-          <StoriesBar />
-        </div>
+        <StoriesBar />
 
         <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
           <Feed key={feedKey} refreshKey={feedKey} />

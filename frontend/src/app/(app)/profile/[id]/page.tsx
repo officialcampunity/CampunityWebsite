@@ -33,13 +33,13 @@ function ProfileContent() {
 
     api
       .getUser(id)
-      .then((data) => {
+      .then((data: User) => {
         setProfile(data);
-        if ((data as any).isFollowing !== undefined) {
-          setIsFollowing((data as any).isFollowing);
+        if (data.isFollowing !== undefined) {
+          setIsFollowing(data.isFollowing);
         }
-        if ((data as any).isBlocked !== undefined) {
-          setIsBlocked((data as any).isBlocked);
+        if (data.isBlocked !== undefined) {
+          setIsBlocked(data.isBlocked);
         }
       })
       .catch(() => setError(true))
@@ -218,14 +218,14 @@ function ProfileContent() {
                 <p className="text-lg md:text-xl font-bold dark:text-white">{profile._count?.resources ?? 0}</p>
                 <p className="text-xs text-gray-400">Notes</p>
               </div>
-              <div className="text-center">
+              <button className="text-center hover:opacity-70 transition" onClick={() => router.push(`/profile/${profile.id}/followers`)}>
                 <p className="text-lg md:text-xl font-bold dark:text-white">{profile._count?.followers ?? 0}</p>
                 <p className="text-xs text-gray-400">Followers</p>
-              </div>
-              <div className="text-center">
+              </button>
+              <button className="text-center hover:opacity-70 transition" onClick={() => router.push(`/profile/${profile.id}/following`)}>
                 <p className="text-lg md:text-xl font-bold dark:text-white">{profile._count?.following ?? 0}</p>
                 <p className="text-xs text-gray-400">Following</p>
-              </div>
+              </button>
             </div>
 
             {isOwnProfile ? (

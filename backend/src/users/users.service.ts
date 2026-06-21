@@ -20,12 +20,45 @@ export class UsersService {
     private notificationsService: NotificationsService,
   ) {}
 
-  async findById(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+  async findById(id: string, currentUserId?: string): Promise<any> {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: {
+        resources: true,
+        followers: true,
+        following: true,
+      },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+
+    let isFollowing = false;
+    let isBlocked = false;
+
+    if (currentUserId && currentUserId !== id) {
+      const follow = await this.followsRepository.findOne({
+        where: { follower: { id: currentUserId }, following: { id } },
+      });
+      isFollowing = !!follow;
+
+      const block = await this.blockedUsersRepository.findOne({
+        where: { blocker: { id: currentUserId }, blocked: { id } },
+      });
+      isBlocked = !!block;
+    }
+
+    const { resources, followers, following, ...userData } = user;
+    return {
+      ...userData,
+      isFollowing,
+      isBlocked,
+      _count: {
+        resources: resources?.length ?? 0,
+        followers: followers?.length ?? 0,
+        following: following?.length ?? 0,
+      },
+    };
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -106,13 +139,16 @@ export class UsersService {
     await this.followsRepository.remove(follow);
   }
 
-  async getFollowers(userId: string, page = 1, limit = 20): Promise<PaginatedResult<User>> {
+  async getFollowers(userId: string, currentUserId?: string, page = 1, limit = 20): Promise<any> {
     const [follows, total] = await this.followsRepository.findAndCount({
       where: { following: { id: userId } },
       relations: { follower: true },
       ...paginationParams(page, limit),
     });
-    return paginate(follows.map(f => f.follower), total, page, limit);
+    const users = follows.map(f => f.follower);
+
+    const enriched = await this.enrichUsers(users, currentUserId);
+    return paginate(enriched, total, page, limit);
   }
 
   async search(q: string, page = 1, limit = 20): Promise<PaginatedResult<User>> {
@@ -176,12 +212,30 @@ export class UsersService {
     return blocks.map(b => b.blocked);
   }
 
-  async getFollowing(userId: string, page = 1, limit = 20): Promise<PaginatedResult<User>> {
+  async getFollowing(userId: string, currentUserId?: string, page = 1, limit = 20): Promise<any> {
     const [follows, total] = await this.followsRepository.findAndCount({
       where: { follower: { id: userId } },
       relations: { following: true },
       ...paginationParams(page, limit),
     });
-    return paginate(follows.map(f => f.following), total, page, limit);
+    const users = follows.map(f => f.following);
+
+    const enriched = await this.enrichUsers(users, currentUserId);
+    return paginate(enriched, total, page, limit);
+  }
+
+  private async enrichUsers(users: User[], currentUserId?: string): Promise<any[]> {
+    if (!currentUserId) return users;
+
+    const followingIds = users.map(u => u.id);
+    const follows = await this.followsRepository.find({
+      where: followingIds.map(fId => ({ follower: { id: currentUserId }, following: { id: fId } })),
+    });
+    const followSet = new Set(follows.map(f => f.following.id));
+
+    return users.map(u => ({
+      ...u,
+      isFollowing: followSet.has(u.id),
+    }));
   }
 }

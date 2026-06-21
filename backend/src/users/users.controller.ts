@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
@@ -34,9 +35,10 @@ export class UsersController {
     return this.usersService.search(q, page, limit);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
-  async getProfile(@Param('id') id: string) {
-    return this.usersService.findById(id);
+  async getProfile(@Param('id') id: string, @Req() req: any) {
+    return this.usersService.findById(id, req.user?.id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -106,21 +108,25 @@ export class UsersController {
     return { message: 'Unblocked successfully' };
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/followers')
   async getFollowers(
     @Param('id') id: string,
+    @Req() req: any,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.usersService.getFollowers(id, page, limit);
+    return this.usersService.getFollowers(id, req.user?.id, page, limit);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/following')
   async getFollowing(
     @Param('id') id: string,
+    @Req() req: any,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.usersService.getFollowing(id, page, limit);
+    return this.usersService.getFollowing(id, req.user?.id, page, limit);
   }
 }

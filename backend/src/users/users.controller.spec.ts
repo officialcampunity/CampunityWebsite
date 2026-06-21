@@ -75,9 +75,9 @@ describe('UsersController', () => {
       const user = { id: 'u1' };
       mockUsersService.findById.mockResolvedValue(user);
 
-      const result = await controller.getProfile('u1');
+      const result = await controller.getProfile('u1', { user: undefined } as any);
 
-      expect(mockUsersService.findById).toHaveBeenCalledWith('u1');
+      expect(mockUsersService.findById).toHaveBeenCalledWith('u1', undefined);
       expect(result).toEqual(user);
     });
   });

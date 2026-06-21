@@ -6,6 +6,8 @@ export interface User {
   avatarUrl: string | null;
   bio: string | null;
   createdAt: string;
+  isFollowing?: boolean;
+  isBlocked?: boolean;
   _count?: { followers: number; following: number; resources: number };
 }
 

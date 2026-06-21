@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { api } from "./api";
+import { api, setAccessToken, getAccessToken } from "./api";
 import type { User } from "./types";
 
 interface AuthContextType {
@@ -32,15 +32,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .getMe()
-      .then((u) => setUser(u))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    async function init() {
+      try {
+        const u = await api.getMe();
+        if (!cancelled) setUser(u);
+        return;
+      } catch {
+        // cookie may be stale — try refreshing the token
+      }
+
+      try {
+        const stored = getAccessToken();
+        if (!stored) return;
+
+        const { access_token } = await api.refreshToken();
+        setAccessToken(access_token);
+
+        const u = await api.getMe();
+        if (!cancelled) setUser(u);
+      } catch {
+        // both cookie and refresh failed — logged out
+      }
+    }
+
+    init().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { user } = await api.login(email, password);
+    const { user, access_token } = await api.login(email, password);
+    setAccessToken(access_token);
     setUser(user);
   }, []);
 
@@ -51,12 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: string,
       displayName: string
     ) => {
-      const { user } = await api.register(
+      const { user, access_token } = await api.register(
         email,
         password,
         username,
         displayName
       );
+      setAccessToken(access_token);
       setUser(user);
     },
     []
@@ -68,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore server errors — clear state anyway */
     } finally {
+      setAccessToken(null);
       setUser(null);
     }
   }, []);

@@ -107,4 +107,10 @@ export class AuthService {
       user,
     };
   }
+
+  async refresh(userId: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new UnauthorizedException();
+    return this.generateToken(user);
+  }
 }

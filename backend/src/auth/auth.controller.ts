@@ -42,7 +42,7 @@ export class AuthController {
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.register(dto);
     this.setCookie(res, result.access_token);
-    return { user: instanceToPlain(result.user) };
+    return { user: instanceToPlain(result.user), access_token: result.access_token };
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -51,14 +51,14 @@ export class AuthController {
   async login(@Req() req: any, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(req.user);
     this.setCookie(res, result.access_token);
-    return { user: instanceToPlain(result.user) };
+    return { user: instanceToPlain(result.user), access_token: result.access_token };
   }
 
   @Post('google')
   async googleLogin(@Body() dto: GoogleLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.googleLogin(dto);
     this.setCookie(res, result.access_token);
-    return { user: instanceToPlain(result.user) };
+    return { user: instanceToPlain(result.user), access_token: result.access_token };
   }
 
   @Post('logout')
@@ -71,6 +71,14 @@ export class AuthController {
       path: '/',
     });
     return { message: 'Logged out' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('refresh')
+  async refresh(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.refresh(req.user.id);
+    this.setCookie(res, result.access_token);
+    return { access_token: result.access_token };
   }
 
   @UseInterceptors(ClassSerializerInterceptor)
