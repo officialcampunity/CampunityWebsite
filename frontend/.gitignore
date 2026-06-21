@@ -44,6 +44,7 @@ yarn-error.log*
 next-env.d.ts
 
 # dev artifacts
+audit.cjs
 dev_*.txt
 dev_out*.txt
 dev_err*.txt
