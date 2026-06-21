@@ -14,13 +14,30 @@ export class PostsService {
     private followsRepository: Repository<Follow>,
   ) {}
 
-  async create(dto: CreatePostDto, userId: string): Promise<Post> {
+  async create(dto: CreatePostDto, userId: string): Promise<any> {
     const post = this.postsRepository.create({
       content: dto.content,
       imageUrl: dto.imageUrl || null,
       author: { id: userId } as any,
     });
-    return this.postsRepository.save(post);
+    await this.postsRepository.save(post);
+    const full = await this.postsRepository.findOne({
+      where: { id: post.id },
+      relations: { author: true },
+    });
+    if (!full) throw new Error('Post not found after creation');
+    return {
+      id: full.id,
+      content: full.content,
+      imageUrl: full.imageUrl,
+      createdAt: full.createdAt,
+      author: {
+        id: full.author.id,
+        displayName: full.author.displayName,
+        username: full.author.username,
+        avatarUrl: full.author.avatarUrl,
+      },
+    };
   }
 
   async getFeed(userId: string, page: number, limit: number) {
