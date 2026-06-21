@@ -4,4 +4,3 @@ dist
 .git
 *.md
 test
-src
